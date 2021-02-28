@@ -1,7 +1,7 @@
 const {Schema, model}  = require('mongoose');
 
 const muestraSchema = new Schema({
-    _id: ObjectId,
+    
     NumeroPaquete: Number,
     tiempoRespuesta: Number,
     TTL: Number,

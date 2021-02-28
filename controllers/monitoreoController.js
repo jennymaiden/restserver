@@ -5,6 +5,7 @@ const Parametro = require('../models/parametros');
 //Servicio de mostrar el diagnostico
 const verDiagnostico = (req= request, res = response) =>  {
     const idLatencia = req.params.idLatencia;
+
     res.json({
         msg: "get API"
     });
@@ -35,6 +36,7 @@ const monitoreoProgramado = (req= request, res = response) =>  {
     //const {fechaInicio,fechaFin, numClientes, tiempoSeg, tamanioPaquete, URL } = req.body;
     const body = req.body;
     const parametro = new Parametro(body);
+    
     res.json({
         msg: "get API monitoreoProgramado",
         parametro
