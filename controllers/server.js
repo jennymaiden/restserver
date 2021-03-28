@@ -35,7 +35,7 @@ class Server{
     }
 
     microserver(){
-        this.app.use('/api/monitoreo', require('../microservices/monitoreoRouter'));
+        this.app.use('/api/monitoreo', require('../routers/monitoreoRouter'));
 
        
 

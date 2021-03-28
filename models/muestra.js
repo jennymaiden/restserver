@@ -6,7 +6,9 @@ const muestraSchema = new Schema({
     tiempoRespuesta: Number,
     TTL: Number,
     tamanio: Number,
-    msgError: String
+    numCliente: Number,
+    msgError: String,
+    idParametros: { type: Schema.ObjectId, ref: "Parametros" } 
 });
 
 module.exports = model('Muestra', muestraSchema);

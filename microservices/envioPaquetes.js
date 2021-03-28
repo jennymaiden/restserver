@@ -14,27 +14,37 @@
 const { spawn } = require("child_process");
 const { StringDecoder } = require('string_decoder');
 
-const { Muestra } = require("../models/muestra");
+const  Muestra  = require("../models/muestra");
+const Latencia = require("../models/latencia");
 const decoder = new StringDecoder('utf8');
 
-const ping = (paquetes, tamanio, url) =>{
-    const auxPing = spawn("ping", ["-c "+paquetes,  "-s "+tamanio, url]);
+function ejecutarPing(cliente, tamanio, url, idParametro){
+
+    console.log("ejecucion cliente :" +cliente);
+    ping(tamanio,url, cliente, idParametro);
+    //ping.close();
+}
+
+const ping = ( tamanio, url, cliente,idParametro) =>{
+    const auxPing = spawn("ping", ["-s "+tamanio, url]);
     
-    const muestra = new Muestra();
+    //const muestra = new Muestra();
     //Se ejecuta mientras no alla error
     auxPing.stdout.on("data", data =>{
         //console.log(`stdout: ${data}`);
         message = decoder.write(data);
-        muestra = identificarLinea(message);
-        console.log('la muestra es: '+muestra);
+        muestra = identificarLinea(message, cliente,idParametro);
+        console.log('la muestra es: '+muestra.id);
     });
 
     auxPing.stderr.on("data", data => {
         console.log(`stderr *****Si ocurre algun error *: ${data}`);
+        //Aqui sale algun error que se presente durante el flujo de los datos
     });
 
     auxPing.on('error', (error) => {
         console.log(`error: ${error.message}`);
+        //Si no se ejecuta mostrar aqui el error de  por el cual no se ejecuto el comando
     });
 
     auxPing.on("close", code => {
@@ -50,9 +60,13 @@ Función para mapear los campos  Muesta:
     TTL:117,
     tamañoPaquete:64 bytes,
 }*/
-function identificarLinea  ( lineas){
-
-    const muestra = new Muestra();
+function identificarLinea  ( lineas, cliente, idParametro){
+    auxNumeroPaquete =0;
+    auxTiempoRespuesta=0;
+    auxTtl =0;
+    auxTamanio =0;
+    auxMsgError = "";
+    
 
     valor = lineas.split(/\n/);
     console.log("tamanio : "+valor.length)
@@ -66,34 +80,47 @@ function identificarLinea  ( lineas){
             }
             
           }, this);
-          muestra.NumeroPaquete= icmp_seq;
-          muestra.tiempoRespuesta = 0;
-          muestra.TTL= 0;
-          muestra.tamanio = 0;
-          muestra.msgError = "timeout";
+          auxNumeroPaquete= icmp_seq;
+          auxTiempoRespuesta = 0;
+          auxTtl= 0;
+          auxTamanio = 0;
+          auxMsgError = "timeout";
 
     }else if(!valor[0].includes('PING') && valor[0].includes('icmp_seq') && valor[0].includes('bytes')){
         cadena = valor[0].split(" ");
 
-        muestra.tamanio = cadena[0];
+        auxTamanio = cadena[0];
 
         cadena.forEach(function(element, index, array) {
             if(element.includes('icmp_seq')){
                 icmp_seq = element.split('=');
-                muestra.NumeroPaquete= icmp_seq[1];
+                auxNumeroPaquete= icmp_seq[1];
             }else if(element.includes('ttl')){
                 ttl = element.split('=');
-                muestra.TTL= ttl[1];
+                auxTtl= ttl[1];
             }else if(element.includes('time')){
                 time = element.split('=');
-                muestra.tiempoRespuesta = time[1];
+                auxTiempoRespuesta = time[1];
             }
+            
             
         }, this);
 
     }
+    
+    var muestra = new Muestra ({ NumeroPaquete:auxNumeroPaquete,
+        tiempoRespuesta:auxTiempoRespuesta,
+        TTL:auxTtl,
+        tamanio:auxTamanio,
+        numCliente:cliente,
+        msgError:auxMsgError,
+        idParametros:idParametro
+    });
+    
+    muestra.save();
+    
     return muestra;
 }
 
 //Exportar
-module.exports= ping
+module.exports= {ejecutarPing, ping}

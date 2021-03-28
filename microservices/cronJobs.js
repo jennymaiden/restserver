@@ -13,7 +13,8 @@ const tarea = (minutos, hora,dia, mes) =>{
 
     cron.schedule('* '+minutos+' '+hora+' '+dia+' '+mes+' *',()=>{
         console.log("------********************-----");
-        ping(1,76,'google.com');
+
+        ping(76,'google.com');
     });
 }
 
