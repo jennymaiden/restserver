@@ -1,11 +1,11 @@
 const {Schema, model}  = require('mongoose');
 
 const diagnosticoSchema = new Schema({
-    _id: ObjectId,
+
     idLatencia: { type: Schema.ObjectId, ref: "Latencia" } ,
     estadistica: String,
-    causa: String,
-    solucion: String,
+    falla:String,
+    idRecomendaciones: { type: Schema.ObjectId, ref: "Latencia" }
 });
 
 module.exports = model('Diagnostico', diagnosticoSchema);

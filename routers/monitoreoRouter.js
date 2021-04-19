@@ -24,6 +24,6 @@ router.post('/suscripcion', obtenerSuscripción);
 //Servicio suscripcion a las notificaciones
 router.post('/notificacion', notificacionPush);
 
-
-
 module.exports = router;
+// NOTIFICACION: https://www.youtube.com/watch?v=B3O__1IiVIY
+// STREAMING : https://www.youtube.com/watch?v=aTEDCotcn20

@@ -1,3 +1,11 @@
+/**Archivo de services para manejar la logica de la información del diagnostico del monitoreo de red**/
+
+const {arrayIdMuestras, obtenerMuestra} = require('../repositoryDB/graficasRepository');
+const {obtenerRecomengacionByFalla} = require('../repositoryDB/recomendacionRepository');
+const {diagnosticoByLatencia} = require('../repositoryDB/diagnosticoRepository');
+
+const  Muestra  = require("../models/muestra");
+const  Recomendaciones  = require("../models/recomendacione");
 
 function calculoTiempo  (fechaInicio, fechaFin, horaInicio, horaFin){
 
@@ -19,4 +27,53 @@ function calcularDiasAusencia(fechaIni, fechaFin) {
     return diff / diaEnMils;
   }
 
-module.exports = {calculoTiempo,calcularDiasAusencia}
+function listarMuestras(idLatencia){
+
+    listIdMuestras = arrayIdMuestras(idLatencia)
+    let arrayMuestra = [];
+    if (listIdMuestras.length != 0){
+        listIdMuestras.forEach(function(id, index) {
+            console.log(`${index} : ${id}`);
+            arrayMuestra.push(obtenerMuestra(id));
+        });
+        return arrayMuestra;
+    }else{
+        return null;
+    }
+
+}
+
+function  obtenerDiagnostico(idLatencia){
+    let diagnostico = diagnosticoByLatencia(idLatencia);
+
+    return diagnostico;
+
+}
+
+function relacionarRecomendacion(idLatencia){
+    //Buscar las muestras relacionadas a la latencia
+    let arrayMuestra = listarMuestras(idLatencia);
+    let recomendacionBD = 'ninguna';
+    //Recorremos el array para validar si tiene algun mensaje de error
+    arrayMuestra.forEach(function (Muestra,index){
+        console.log(`${index} : ${Muestra}`);
+        //Se valida si es diferende de vacio el error
+        if(!Muestra.msgError.equals('')){
+            recomendacionBD = obtenerRecomengacionByFalla(Muestra.msgError);
+        }
+    });
+
+    return recomendacionBD;
+}
+
+function  obtenerParametros(idLatencia){
+
+}
+module.exports = {
+    calculoTiempo,
+    calcularDiasAusencia,
+    listarMuestras,
+    obtenerDiagnostico,
+    obtenerParametros,
+    relacionarRecomendacion
+}

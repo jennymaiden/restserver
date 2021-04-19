@@ -15,7 +15,6 @@ const { spawn } = require("child_process");
 const { StringDecoder } = require('string_decoder');
 
 const  Muestra  = require("../models/muestra");
-const Latencia = require("../models/latencia");
 const decoder = new StringDecoder('utf8');
 
 function ejecutarPing(cliente, tamanio, url, idParametro){
@@ -35,6 +34,7 @@ const ping = ( tamanio, url, cliente,idParametro) =>{
         message = decoder.write(data);
         muestra = identificarLinea(message, cliente,idParametro);
         console.log('la muestra es: '+muestra.id);
+        
     });
 
     auxPing.stderr.on("data", data => {

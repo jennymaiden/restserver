@@ -18,7 +18,4 @@ const tarea = (minutos, hora,dia, mes) =>{
     });
 }
 
-
-
-
 module.exports = tarea;

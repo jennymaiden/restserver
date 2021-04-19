@@ -4,6 +4,7 @@
  * la creacion de la aggregacion para traer toda la informacion que se requiera para mostrar el diagnostico
  * y las consultas necesarias y el servicio de graficar ya sea en tiempo real o en programado*/
 const { response, request } = require('express');
+const {listarMuestras, obtenerDiagnostico, obtenerParametros} = require('../microservices/diagnosticoService');
 
 
 /**
@@ -15,8 +16,11 @@ const { response, request } = require('express');
 const verDiagnostico = (req= request, res = response) =>  {
     const idLatencia = req.params.idLatencia;
 
-    res.json({
-        msg: "get API"
+    res.status( 200 ).json({
+        msg: "get API",
+        parametros: obtenerParametros(idLatencia),
+        diagnostico: obtenerDiagnostico(idLatencia),
+        muestras: listarMuestras(idLatencia)
     });
 }
 
