@@ -3,9 +3,9 @@
 const {arrayIdMuestras, obtenerMuestra} = require('../repositoryDB/graficasRepository');
 const {obtenerRecomengacionByFalla} = require('../repositoryDB/recomendacionRepository');
 const {diagnosticoByLatencia} = require('../repositoryDB/diagnosticoRepository');
+const {getLatencia} = require('../repositoryDB/latenciaRepository');
+const {getParametro} = require('../repositoryDB/parametroRepository');
 
-const  Muestra  = require("../models/muestra");
-const  Recomendaciones  = require("../models/recomendacione");
 
 function calculoTiempo  (fechaInicio, fechaFin, horaInicio, horaFin){
 
@@ -27,7 +27,7 @@ function calcularDiasAusencia(fechaIni, fechaFin) {
     return diff / diaEnMils;
   }
 
-function listarMuestras(idLatencia){
+function listarMuestrasByLatencia(idLatencia){
 
     listIdMuestras = arrayIdMuestras(idLatencia)
     let arrayMuestra = [];
@@ -52,7 +52,7 @@ function  obtenerDiagnostico(idLatencia){
 
 function relacionarRecomendacion(idLatencia){
     //Buscar las muestras relacionadas a la latencia
-    let arrayMuestra = listarMuestras(idLatencia);
+    let arrayMuestra = listarMuestrasByLatencia(idLatencia);
     let recomendacionBD = 'ninguna';
     //Recorremos el array para validar si tiene algun mensaje de error
     arrayMuestra.forEach(function (Muestra,index){
@@ -65,14 +65,31 @@ function relacionarRecomendacion(idLatencia){
 
     return recomendacionBD;
 }
+function relacionarMuestrasWithLatencia(idLatencia, idParametro){
+
+}
 
 function  obtenerParametros(idLatencia){
 
+    latenciaModel = getLatencia(idLatencia);
+    console.log('El modelo de la latencia es: '+latenciaModel);
+    console.log('El id de parametro de modelo: '+latenciaModel.idParametros);
+    return getParametro(latenciaModel.idParametros);
+
 }
+
+function crearDiagnostico(idParametro){
+
+}
+
+function listarMuestrasByParametro(idParametro){
+
+}
+
 module.exports = {
     calculoTiempo,
     calcularDiasAusencia,
-    listarMuestras,
+    listarMuestrasByLatencia,
     obtenerDiagnostico,
     obtenerParametros,
     relacionarRecomendacion

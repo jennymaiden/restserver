@@ -1,8 +1,8 @@
 const { response, request } = require('express');
 const Parametro = require('../models/parametros');
-const Latencia = require("../models/latencia");
-const {calculoTiempo, calcularDiasAusencia} = require('../microservices/diagnosticoService');
-const {ejecutarPing, ping} = require('../microservices/envioPaquetes');
+
+const { tarea , crearTarea} = require('../microservices/cronJobs')
+const {ejecutarPing, ping,guardarParametros, crearLatencia} = require('../microservices/envioPaquetes');
 
 
 //Servicio de monitoreo en tiempo real
@@ -54,18 +54,21 @@ const monitoreoProgramado = (req= request, res = response) =>  {
 
     //obtener los parametros de entrada 
     const {fechaInicio,fechaFin, numClientes, tiempoSeg, tamanioPaquete, URL, horaInicio,horaFin } = req.body;
-    //Calcular el tiempo de la prueba
-    tiempoPrueba = calculoTiempo(fechaInicio,fechaFin,horaInicio,horaFin);
     const body = req.body;
-    const parametro = new Parametro(body);
-    parametro.save();
-    dias = calcularDiasAusencia(fechaInicio,fechaFin )
+    parametroModel = guardarParametros(body);
+    console.log("el id del los parametros ingrasados es"+ parametroModel._id);
+    latenciaModel = crearLatencia(parametroModel._id);
+    console.log("El id de la latencia es :"+latenciaModel._id);
+    //Crear tarea programada
+    boolTarea = crearTarea(body,parametroModel._id,latenciaModel._id);
+
+    //dias = calcularDiasAusencia(fechaInicio,fechaFin )
     
-    res.json({
-        msg: "get API monitoreoProgramado",
-        parametro,
-        tiempoPrueba,
-        dias
+    res.status(200).json({
+        msg: "get API monitoreoProgramado 1",
+        parametroModel,
+        latenciaModel,
+        tarea: boolTarea
     });
 }
 

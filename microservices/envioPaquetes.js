@@ -15,8 +15,22 @@ const { spawn } = require("child_process");
 const { StringDecoder } = require('string_decoder');
 
 const  Muestra  = require("../models/muestra");
+const Parametro = require('../models/parametros');
+const  Latencia = require('../models/latencia');
 const decoder = new StringDecoder('utf8');
 
+function crearLatencia(idParametro){
+
+    const latenciaModel = new Latencia();
+    latenciaModel.idParametros = idParametro;
+    latenciaModel.save();
+    return latenciaModel;
+}
+function guardarParametros(parametroBody){
+    const parametro = new Parametro(parametroBody);
+    parametro.save();
+    return parametro;
+}
 function ejecutarPing(cliente, tamanio, url, idParametro){
 
     console.log("ejecucion cliente :" +cliente);
@@ -24,7 +38,7 @@ function ejecutarPing(cliente, tamanio, url, idParametro){
     //ping.close();
 }
 
-const ping = ( tamanio, url, cliente,idParametro) =>{
+function ping ( tamanio, url, cliente,idParametro) {
     const auxPing = spawn("ping", ["-s "+tamanio, url]);
     
     //const muestra = new Muestra();
@@ -50,6 +64,7 @@ const ping = ( tamanio, url, cliente,idParametro) =>{
     auxPing.on("close", code => {
         console.log(`child process exited with code ${code}`);
     });
+    return auxPing;
 
 }
 
@@ -69,7 +84,7 @@ function identificarLinea  ( lineas, cliente, idParametro){
     
 
     valor = lineas.split(/\n/);
-    console.log("tamanio : "+valor.length)
+    console.log("cliente : "+cliente)
     if(lineas.includes('timeout')){
         auxError = lineas.split(' ');
         let icmp_seq =0;
@@ -123,4 +138,9 @@ function identificarLinea  ( lineas, cliente, idParametro){
 }
 
 //Exportar
-module.exports= {ejecutarPing, ping}
+module.exports= {
+    ejecutarPing,
+    ping,
+    guardarParametros,
+    crearLatencia
+}

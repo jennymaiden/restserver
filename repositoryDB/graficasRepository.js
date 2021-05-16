@@ -25,6 +25,17 @@ const obtenerMuestra = async (idMuestra)=>{
     return muestra;
 }
 
+/**w
+ * Filtrar en la colección de muestras por el idParametro para
+ * traer todas las muestras relacionadas **/
+const listMuestrasByParametro = async (idParametro)=>{
+    const muestras = await Muestra.aggregate([{ $match: { 'idParametros': idParametro } }]);
+    if(!muestras){
+        throw new Error('El id del parametro no corresponde  no esta en la BD');
+    }
+    return muestras;
+}
+
 module.exports={
     arrayIdMuestras,
     obtenerMuestra
