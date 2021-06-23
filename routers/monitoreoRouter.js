@@ -3,11 +3,15 @@ const { monitoreoTiempoReal, monitoreoProgramado}= require('../controllers/monit
 const {obtenerSuscripción, notificacionPush } = require('../controllers/notificacionController')
 const {verAlertas } = require('../controllers/alertasController')
 const {verDiagnostico } = require('../controllers/diagnosticoController')
+const {verGrafica } = require('../controllers/graficaController')
 
 const router = Router();
 
 //Servicio de  ver diagnostico de red
 router.get('/diagnostico/:idLatencia', verDiagnostico);
+
+// Servicio de ver grafica por defecto
+router.get('/grafica',verGrafica);
 
 //Servicio de ver las alertas
 router.get('/alertas', verAlertas);

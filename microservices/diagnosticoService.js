@@ -1,10 +1,13 @@
 /**Archivo de services para manejar la logica de la información del diagnostico del monitoreo de red**/
 
-const {arrayIdMuestras, obtenerMuestra} = require('../repositoryDB/graficasRepository');
+const {arrayIdMuestras, obtenerMuestra, listMuestrasByParametro} = require('../repositoryDB/graficasRepository');
 const {obtenerRecomengacionByFalla} = require('../repositoryDB/recomendacionRepository');
 const {diagnosticoByLatencia} = require('../repositoryDB/diagnosticoRepository');
 const {getLatencia} = require('../repositoryDB/latenciaRepository');
 const {getParametro} = require('../repositoryDB/parametroRepository');
+const  Diagnostico  = require("../models/diagnostico");
+const  Recomendacion  = require("../models/recomendacione");
+const QoE = require('../models/calidadServicio');
 
 
 function calculoTiempo  (fechaInicio, fechaFin, horaInicio, horaFin){
@@ -43,11 +46,10 @@ function listarMuestrasByLatencia(idLatencia){
 
 }
 
-function  obtenerDiagnostico(idLatencia){
-    let diagnostico = diagnosticoByLatencia(idLatencia);
+async function  obtenerDiagnostico(idLatencia) {
 
-    return diagnostico;
-
+    const modelDiagnostico = await diagnosticoByLatencia(idLatencia);
+    return modelDiagnostico;
 }
 
 function relacionarRecomendacion(idLatencia){
@@ -69,20 +71,109 @@ function relacionarMuestrasWithLatencia(idLatencia, idParametro){
 
 }
 
-function  obtenerParametros(idLatencia){
+async function  obtenerParametros (idLatencia){
 
-    latenciaModel = getLatencia(idLatencia);
-    console.log('El modelo de la latencia es: '+latenciaModel);
-    console.log('El id de parametro de modelo: '+latenciaModel.idParametros);
-    return getParametro(latenciaModel.idParametros);
+    const modelLatencia = await getLatencia(idLatencia)
+    const modelParametro = await getParametro(modelLatencia.idParametros);
 
+    return modelParametro;
 }
 
-function crearDiagnostico(idParametro){
+/**
+ * Función para retornar la estadistica  */
+function obtenerEstadistica(muestrasList){
+    var min = 0;
+    var max = 0;
+    var sumatoria = 0;
+    var paquetesPerdidos =0;
+    var msgEstadistica = "";
+    var promerio =0;
+    var arrayMSGPerdidos = [];
 
+    muestrasList.forEach(function (Muestra,index){
+        console.log(`${index} : ${Muestra}`);
+        if(Muestra.tiempoRespuesta < min){
+            console.log('Anterior minimo: ' + min + ', nuevo minimo: ' + Muestra.tiempoRespuesta);
+            min = Muestra.tiempoRespuesta;
+        }
+        if(Muestra.tiempoRespuesta > max){
+            console.log('Anterior maximo: ' + max + ', nuevo maximo: ' + Muestra.tiempoRespuesta);
+            max = Muestra.tiempoRespuesta;
+        }
+        sumatoria = Muestra.tiempoRespuesta +sumatoria;
+        if(Muestra.msgError != ''){
+            paquetesPerdidos ++;
+            arrayMSGPerdidos.push(Muestra.msgError);
+        }
+
+    });
+    console.log('Valor mínimo: ' + min);
+    console.log('Valor maximo: ' + max);
+    console.log('Valor sumatoria: ' + sumatoria);
+    promerio = sumatoria/muestrasList.length;
+
+    if(paquetesPerdidos > 0){
+        let porcentaje = (paquetesPerdidos*100)/muestrasList.length;
+        msgEstadistica =  muestrasList.length+" paquetes trasmitidos, "+paquetesPerdidos+" paquetes perdidos y "+porcentaje+"% paquetes perdidos";
+    }else{
+        msgEstadistica= muestrasList.length+" paquetes trasmitidos y 0% paquetes perdidos";
+    }
+    msgEstadistica =  msgEstadistica+" - El tiempo minimo de envío fue: "+min+ ". El tiempo maximo fue: "+max+
+    ". El promedio de envío fue: "+promerio;
+
+
+    return [msgEstadistica,paquetesPerdidos,promerio,arrayMSGPerdidos];
 }
 
-function listarMuestrasByParametro(idParametro){
+
+async function crearDiagnostico(idLatencia) {
+
+    // Crear recomendaciones
+    // var recomendacion = new Recomendacion({
+    //     falla: 'timeout',
+    //     causa: 'El servidor de destino no pudo resolver la solicitud de envío',
+    //     solucion: 'Reintentar de nuevo o revisar su configuración de proxy. Si ninguna funciona valide con el proveedor de internet'
+    // });
+    // await recomendacion.save();
+    const parametro = await obtenerParametros(idLatencia);
+    const muestrasList = await listarMuestrasByParametro(parametro._id);
+    // console.log(`muestraa de lista ${muestrasList}`);
+    const arrayEstadistica = obtenerEstadistica(muestrasList);
+    console.log('La estadistica dio : '+arrayEstadistica);
+
+
+    var diagnostico = new Diagnostico ({
+        idLatencia:idLatencia,
+        estadistica:arrayEstadistica[0],
+        falla:arrayEstadistica[1] > 0 ? true: false,
+        idRecomendacion:'60c9878d4ede7fab2a8683c7',
+        QoE: Qoe(arrayEstadistica[2])
+    });
+
+    diagnostico = await diagnostico.save();
+    return diagnostico;
+}
+const Qoe = (promedio) =>{
+    let juegos       = (promedio <= QoE.JUEGOS)? true: false;
+    let rtsp         = (promedio <= QoE.RTSP)? true: false;
+    let peliculas    = (promedio <= QoE.PELICULAS)? true: false;
+    let red    = (promedio <= QoE.REDSOCIAL)? true: false;
+    let smtp         = (promedio <= QoE.SMTP)? true: false;
+    let http         = (promedio <= QoE.HTTP)? true: false;
+    let respuestaQoE;
+    return respuestaQoE = JSON.stringify({JUEGOS: juegos, RTSP: rtsp, PELICULAS: peliculas, REDSOCIAL: red, SMTP: smtp, HTTP: http});
+}
+
+function ordenarMuestrasByCliente(data) {
+
+    hash = data.reduce((p,c) => (p[c.numCliente] ? p[c.numCliente].push(c) : p[c.numCliente] = [c],p) ,{}),
+        newData = Object.keys(hash).map(k => ({numCliente: k, muestra: hash[k]}));
+    // console.log(newData);
+    return newData;
+}
+async function listarMuestrasByParametro(idParametro){
+    const muestraList = await listMuestrasByParametro(idParametro)
+    return muestraList;
 
 }
 
@@ -92,5 +183,8 @@ module.exports = {
     listarMuestrasByLatencia,
     obtenerDiagnostico,
     obtenerParametros,
-    relacionarRecomendacion
+    relacionarRecomendacion,
+    listarMuestrasByParametro,
+    ordenarMuestrasByCliente,
+    crearDiagnostico
 }

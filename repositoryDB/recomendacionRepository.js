@@ -13,6 +13,17 @@ const obtenerRecomengacionByFalla = async(fallaP)=>{
 
     return recomendacionDB;
 }
+
+const obtenerRecomendacion =  async (idRecomendacion)=>{
+
+    const recomendacionData =await Recomendaciones.findById(idRecomendacion);
+    if(!recomendacionData){
+        throw new Error('Ocurrio un error en la consulta obtenerRecomendacion');
+    }
+    return recomendacionData;
+}
+
 module.exports= {
-    obtenerRecomengacionByFalla
+    obtenerRecomengacionByFalla,
+    obtenerRecomendacion
 }

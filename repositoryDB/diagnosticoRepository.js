@@ -14,11 +14,12 @@ const guardarDiagnostico= async(diagnosticoModelo)=>{
 /**
  * Consultar el diagnostico por el id de la latencia*/
 async function  diagnosticoByLatencia (idLatencia){
-    let diagnosticoDB = await Diagnostico.find({ idLatencia: idLatencia},
-        function (err, docs) {
+    const diagnosticoDB = await Diagnostico.find({ idLatencia: idLatencia},
+        function (err, data) {
             if (err){
                 throw new Error('Ocurrio un error en la consulta diagnosticoByLatencia ${err}');
             }
+            return data;
 
         });
 

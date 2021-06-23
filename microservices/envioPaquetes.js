@@ -40,19 +40,24 @@ function ejecutarPing(cliente, tamanio, url, idParametro){
 
 function ping ( tamanio, url, cliente,idParametro) {
     const auxPing = spawn("ping", ["-s "+tamanio, url]);
+    var muestraModel = new Muestra();
     
     //const muestra = new Muestra();
     //Se ejecuta mientras no alla error
     auxPing.stdout.on("data", data =>{
         //console.log(`stdout: ${data}`);
         message = decoder.write(data);
-        muestra = identificarLinea(message, cliente,idParametro);
-        console.log('la muestra es: '+muestra.id);
+        muestraModel = identificarLinea(message, cliente,idParametro);
+        console.log('la muestra es: '+muestraModel.id);
+        muestraModel.save();
+        // muestra.update()
         
     });
 
     auxPing.stderr.on("data", data => {
         console.log(`stderr *****Si ocurre algun error *: ${data}`);
+        muestraModel.msgError = data;
+        muestraModel.save();
         //Aqui sale algun error que se presente durante el flujo de los datos
     });
 
@@ -87,6 +92,7 @@ function identificarLinea  ( lineas, cliente, idParametro){
     console.log("cliente : "+cliente)
     if(lineas.includes('timeout')){
         auxError = lineas.split(' ');
+        console.log("auxError: "+auxError);
         let icmp_seq =0;
         auxError.forEach(function(element, index, array) {
             if(element == 'icmp_seq'){
@@ -99,6 +105,7 @@ function identificarLinea  ( lineas, cliente, idParametro){
           auxTiempoRespuesta = 0;
           auxTtl= 0;
           auxTamanio = 0;
+          console.log("MENSAJE: "+lineas);
           auxMsgError = "timeout";
 
     }else if(!valor[0].includes('PING') && valor[0].includes('icmp_seq') && valor[0].includes('bytes')){
@@ -121,6 +128,8 @@ function identificarLinea  ( lineas, cliente, idParametro){
             
         }, this);
 
+    }else {
+        // TODO: Guardar algun fallo
     }
     
     var muestra = new Muestra ({ NumeroPaquete:auxNumeroPaquete,
@@ -131,9 +140,7 @@ function identificarLinea  ( lineas, cliente, idParametro){
         msgError:auxMsgError,
         idParametros:idParametro
     });
-    
-    muestra.save();
-    
+
     return muestra;
 }
 

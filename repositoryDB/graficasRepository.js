@@ -4,6 +4,7 @@
 const  Latencia  = require("../models/latencia");
 const  Muestra  = require("../models/muestra");
 
+
 /**
  * Consulta por el id de la latecia traer el array o la lista de los id de las muestras**/
 const  arrayIdMuestras = async(idLatencia)=>{
@@ -28,7 +29,23 @@ const obtenerMuestra = async (idMuestra)=>{
 /**w
  * Filtrar en la colección de muestras por el idParametro para
  * traer todas las muestras relacionadas **/
-const listMuestrasByParametro = async (idParametro)=>{
+async function  listMuestrasByParametro (idParametro){
+
+    const muestrasList = await Muestra.find({ idParametros: idParametro},
+        function (err, data) {
+            if (err){
+                throw new Error('Ocurrio un error en la consulta listMuestrasByParametro ${err}');
+            }
+            // console.log('muestras ... '+data);
+            return data;
+
+        });
+
+    return muestrasList;
+}
+
+const listMuestrasByParametro1 = async (idParametro)=>{
+    console.log('el id parametro es ',idParametro);
     const muestras = await Muestra.aggregate([{ $match: { 'idParametros': idParametro } }]);
     if(!muestras){
         throw new Error('El id del parametro no corresponde  no esta en la BD');
@@ -38,5 +55,6 @@ const listMuestrasByParametro = async (idParametro)=>{
 
 module.exports={
     arrayIdMuestras,
-    obtenerMuestra
+    obtenerMuestra,
+    listMuestrasByParametro,listMuestrasByParametro1
 }

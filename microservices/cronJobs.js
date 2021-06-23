@@ -1,5 +1,7 @@
 const cron = require('node-cron');
 const { ping } = require('./envioPaquetes');
+const { crearDiagnostico } = require('../microservices/diagnosticoService');
+const { crearAlertaConNotificacion } = require('../microservices/alertasService');
 var spawn =require('child_process').spawn, child=null;
 
 /***Los parametros del cron jobs es
@@ -98,7 +100,9 @@ function crearTarea(parametroModel,idParametro, idLatencia){
         //     console.log(`${property}: ${tareaXCliente[property]}`);
         //     tareaXCliente[property].destroy();
         // }
-        //Crear el diagnostico
+        //LanzarAlerta
+        crearAlertaConNotificacion();
+
 
     });
 
