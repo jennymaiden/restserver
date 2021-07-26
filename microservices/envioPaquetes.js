@@ -31,12 +31,6 @@ function guardarParametros(parametroBody){
     parametro.save();
     return parametro;
 }
-function ejecutarPing(cliente, tamanio, url, idParametro){
-
-    console.log("ejecucion cliente :" +cliente);
-    ping(tamanio,url, cliente, idParametro);
-    //ping.close();
-}
 
 function ping ( tamanio, url, cliente,idParametro) {
     const auxPing = spawn("ping", ["-s "+tamanio, url]);
@@ -48,8 +42,8 @@ function ping ( tamanio, url, cliente,idParametro) {
         //console.log(`stdout: ${data}`);
         message = decoder.write(data);
         muestraModel = identificarLinea(message, cliente,idParametro);
-        console.log('la muestra es: '+muestraModel.id);
-        muestraModel.save();
+        // console.log('la muestra es: '+muestraModel.id);
+        // muestraModel.save();
         // muestra.update()
         
     });
@@ -69,8 +63,8 @@ function ping ( tamanio, url, cliente,idParametro) {
     auxPing.on("close", code => {
         console.log(`child process exited with code ${code}`);
     });
-    return auxPing;
 
+    return auxPing;
 }
 
 /*
@@ -106,7 +100,11 @@ function identificarLinea  ( lineas, cliente, idParametro){
           auxTtl= 0;
           auxTamanio = 0;
           console.log("MENSAJE: "+lineas);
-          auxMsgError = "timeout";
+          if (lineas.includes('timeout')){
+              auxMsgError = 'timeout';
+          }else{
+              auxMsgError = lineas;
+          }
 
     }else if(!valor[0].includes('PING') && valor[0].includes('icmp_seq') && valor[0].includes('bytes')){
         cadena = valor[0].split(" ");
@@ -122,6 +120,7 @@ function identificarLinea  ( lineas, cliente, idParametro){
                 auxTtl= ttl[1];
             }else if(element.includes('time')){
                 time = element.split('=');
+                console.log('Tiempo : '+time[1]);
                 auxTiempoRespuesta = time[1];
             }
             
@@ -141,12 +140,13 @@ function identificarLinea  ( lineas, cliente, idParametro){
         idParametros:idParametro
     });
 
+    muestra.save();
+
     return muestra;
 }
 
 //Exportar
 module.exports= {
-    ejecutarPing,
     ping,
     guardarParametros,
     crearLatencia

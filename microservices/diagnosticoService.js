@@ -8,6 +8,7 @@ const {getParametro} = require('../repositoryDB/parametroRepository');
 const  Diagnostico  = require("../models/diagnostico");
 const  Recomendacion  = require("../models/recomendacione");
 const QoE = require('../models/calidadServicio');
+const mongoose = require('mongoose');
 
 
 function calculoTiempo  (fechaInicio, fechaFin, horaInicio, horaFin){
@@ -45,6 +46,25 @@ function listarMuestrasByLatencia(idLatencia){
     }
 
 }
+async function  validacionFallaMuestra(idParametro) {
+
+    let muestraFallida = false;
+    var paquetesPerdidos =0;
+    const muestrasList = await listarMuestrasByParametro(idParametro);
+    muestrasList.forEach(function (Muestra,index){
+        // console.log(`${index} : ${Muestra}`);
+        if(Muestra.msgError != ''){
+            // console.log("El error es: "+Muestra.msgError)
+            paquetesPerdidos ++;
+        }
+
+    });
+    // console.log("numero de paquetes perdidos : "+paquetesPerdidos)
+    if(paquetesPerdidos > 5){
+        muestraFallida = true;
+    }
+    return muestraFallida;
+}
 
 async function  obtenerDiagnostico(idLatencia) {
 
@@ -52,23 +72,38 @@ async function  obtenerDiagnostico(idLatencia) {
     return modelDiagnostico;
 }
 
-function relacionarRecomendacion(idLatencia){
-    //Buscar las muestras relacionadas a la latencia
-    let arrayMuestra = listarMuestrasByLatencia(idLatencia);
-    let recomendacionBD = 'ninguna';
-    //Recorremos el array para validar si tiene algun mensaje de error
-    arrayMuestra.forEach(function (Muestra,index){
-        console.log(`${index} : ${Muestra}`);
-        //Se valida si es diferende de vacio el error
-        if(!Muestra.msgError.equals('')){
-            recomendacionBD = obtenerRecomengacionByFalla(Muestra.msgError);
+async function relacionarRecomendacion(paquetesPerdidos, arrayMensajesError, muestrasList) {
+
+    var tipoFalla = 'ninguna';
+    var porcentajeFalla = muestrasList.length * 0.5;
+    if (paquetesPerdidos > porcentajeFalla) {
+        tipoFalla = 'muchosPerdidos';
+    }else{
+        //Recorremos el array para validar si tiene algun mensaje de error
+        var msgPriorisar = '';
+        arrayMensajesError.forEach(function (msg, index) {
+            // console.log(`${index} : ${msg}`);
+            if (msg !== 'timeout') {
+                msgPriorisar = msg;
+                console.log('mensaje relevante es: '+msgPriorisar);
+            }
+        });
+        if (msgPriorisar !== ''){
+            console.log('que quedo es: '+msgPriorisar);
+            if (msgPriorisar.includes('time')){
+                tipoFalla = 'time:65';
+            }else if (msgPriorisar.includes('Unknown')){
+                tipoFalla = 'Unknown host';
+            }else if (msgPriorisar.includes('NAT')){
+                tipoFalla = 'NAT';
+            }
+        }else {
+            tipoFalla = 'timeout';
         }
-    });
+    }
+    console.log('tipoFalla::: '+tipoFalla);
 
-    return recomendacionBD;
-}
-function relacionarMuestrasWithLatencia(idLatencia, idParametro){
-
+    return await obtenerRecomengacionByFalla(tipoFalla);
 }
 
 async function  obtenerParametros (idLatencia){
@@ -91,13 +126,13 @@ function obtenerEstadistica(muestrasList){
     var arrayMSGPerdidos = [];
 
     muestrasList.forEach(function (Muestra,index){
-        console.log(`${index} : ${Muestra}`);
+        // console.log(`${index} : ${Muestra}`);
         if(Muestra.tiempoRespuesta < min){
-            console.log('Anterior minimo: ' + min + ', nuevo minimo: ' + Muestra.tiempoRespuesta);
+            // console.log('Anterior minimo: ' + min + ', nuevo minimo: ' + Muestra.tiempoRespuesta);
             min = Muestra.tiempoRespuesta;
         }
         if(Muestra.tiempoRespuesta > max){
-            console.log('Anterior maximo: ' + max + ', nuevo maximo: ' + Muestra.tiempoRespuesta);
+            // console.log('Anterior maximo: ' + max + ', nuevo maximo: ' + Muestra.tiempoRespuesta);
             max = Muestra.tiempoRespuesta;
         }
         sumatoria = Muestra.tiempoRespuesta +sumatoria;
@@ -107,19 +142,19 @@ function obtenerEstadistica(muestrasList){
         }
 
     });
-    console.log('Valor mínimo: ' + min);
-    console.log('Valor maximo: ' + max);
-    console.log('Valor sumatoria: ' + sumatoria);
+    // console.log('Valor mínimo: ' + min);
+    // console.log('Valor maximo: ' + max);
+    // console.log('Valor sumatoria: ' + sumatoria);
     promerio = sumatoria/muestrasList.length;
 
     if(paquetesPerdidos > 0){
         let porcentaje = (paquetesPerdidos*100)/muestrasList.length;
-        msgEstadistica =  muestrasList.length+" paquetes trasmitidos, "+paquetesPerdidos+" paquetes perdidos y "+porcentaje+"% paquetes perdidos";
+        msgEstadistica =  muestrasList.length+" paquetes trasmitidos, "+paquetesPerdidos+" paquetes perdidos y "+Math.round(porcentaje)+"% paquetes perdidos";
     }else{
         msgEstadistica= muestrasList.length+" paquetes trasmitidos y 0% paquetes perdidos";
     }
-    msgEstadistica =  msgEstadistica+" - El tiempo minimo de envío fue: "+min+ ". El tiempo maximo fue: "+max+
-    ". El promedio de envío fue: "+promerio;
+    msgEstadistica =  msgEstadistica+" - El tiempo minimo de envío fue: "+Math.round(min)+ "(ms). El tiempo maximo fue: "+Math.round(max)+
+    "(ms). El promedio de envío fue: "+Math.round(promerio) + "milisegundos (ms)";
 
 
     return [msgEstadistica,paquetesPerdidos,promerio,arrayMSGPerdidos];
@@ -128,25 +163,24 @@ function obtenerEstadistica(muestrasList){
 
 async function crearDiagnostico(idLatencia) {
 
-    // Crear recomendaciones
-    // var recomendacion = new Recomendacion({
-    //     falla: 'timeout',
-    //     causa: 'El servidor de destino no pudo resolver la solicitud de envío',
-    //     solucion: 'Reintentar de nuevo o revisar su configuración de proxy. Si ninguna funciona valide con el proveedor de internet'
-    // });
-    // await recomendacion.save();
     const parametro = await obtenerParametros(idLatencia);
     const muestrasList = await listarMuestrasByParametro(parametro._id);
     // console.log(`muestraa de lista ${muestrasList}`);
     const arrayEstadistica = obtenerEstadistica(muestrasList);
-    console.log('La estadistica dio : '+arrayEstadistica);
+    // console.log('La estadistica dio : '+arrayEstadistica);
+    var porcentajeFalla = muestrasList.length * 0.2;
+    var falloDiagnostico = false;
+    if (arrayEstadistica[1] > porcentajeFalla) {
+        falloDiagnostico = true;
+    }
 
+    const recomentacion = await relacionarRecomendacion(arrayEstadistica[1], arrayEstadistica[3], muestrasList);
 
     var diagnostico = new Diagnostico ({
         idLatencia:idLatencia,
         estadistica:arrayEstadistica[0],
-        falla:arrayEstadistica[1] > 0 ? true: false,
-        idRecomendacion:'60c9878d4ede7fab2a8683c7',
+        falla:falloDiagnostico,
+        idRecomendacion: mongoose.Types.ObjectId(recomentacion[0]._id),
         QoE: Qoe(arrayEstadistica[2])
     });
 
@@ -160,8 +194,8 @@ const Qoe = (promedio) =>{
     let red    = (promedio <= QoE.REDSOCIAL)? true: false;
     let smtp         = (promedio <= QoE.SMTP)? true: false;
     let http         = (promedio <= QoE.HTTP)? true: false;
-    let respuestaQoE;
-    return respuestaQoE = JSON.stringify({JUEGOS: juegos, RTSP: rtsp, PELICULAS: peliculas, REDSOCIAL: red, SMTP: smtp, HTTP: http});
+
+    return JSON.stringify({JUEGOS: juegos, RTSP: rtsp, PELICULAS: peliculas, REDSOCIAL: red, SMTP: smtp, HTTP: http});
 }
 
 function ordenarMuestrasByCliente(data) {
@@ -178,13 +212,11 @@ async function listarMuestrasByParametro(idParametro){
 }
 
 module.exports = {
-    calculoTiempo,
-    calcularDiasAusencia,
-    listarMuestrasByLatencia,
     obtenerDiagnostico,
     obtenerParametros,
     relacionarRecomendacion,
     listarMuestrasByParametro,
     ordenarMuestrasByCliente,
-    crearDiagnostico
+    crearDiagnostico,
+    validacionFallaMuestra
 }

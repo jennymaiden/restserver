@@ -10,7 +10,8 @@ const {listarMuestrasByParametro,
     obtenerDiagnostico,
     obtenerParametros,
     crearDiagnostico } = require('../microservices/diagnosticoService');
-
+const { obtenerUltimaLatencia } = require("../microservices/graficaService");
+const { getLatencia } = require('../repositoryDB/latenciaRepository');
 
 /**
  * Servicio de mostrar el diagnostico
@@ -19,18 +20,28 @@ const {listarMuestrasByParametro,
  * RESUMEN: mostrar el diagnostico las posibles fallas y las soluciones que se pueden dar
  */
 const verDiagnostico = async(req= request, res = response) =>  {
+    console.log(' *********** verDiagnostico ************');
     try{
         const idLatencia = req.params.idLatencia;
-        const parametro = await obtenerParametros(idLatencia);
-        diagnostico = await obtenerDiagnostico(idLatencia);
+        console.log('verDiagnostico :: idlatencia '+idLatencia);
+        if (idLatencia !== void 0 && idLatencia !== 'undefined'){
+            console.log('entro aqui +');
+            latencia = await getLatencia(idLatencia);
+        }else {
+            console.log('entro aqui --');
+            latencia = await obtenerUltimaLatencia();
+        }
+        // console.log('objeto latencia :  '+latencia[0]._id);
+        parametro = await obtenerParametros(latencia[0]._id);
+        diagnostico = await obtenerDiagnostico(latencia[0]._id);
 
-        if (diagnostico.length == 0){
-            diagnostico = await crearDiagnostico(idLatencia);
+        if (diagnostico === null){
+            diagnostico = await crearDiagnostico(latencia[0]._id);
         }
         // Buscar las recomendaciones
-        const recomendacion = await obtenerRecomendacion('60c9878d4ede7fab2a8683c7');
-        console.log('la recomendacion es  :: '+recomendacion);
+        recomendacion = await obtenerRecomendacion(diagnostico.idRecomendacion);
 
+        console.log(' *********** FIN verDiagnostico ************');
         res.status( 200 ).json({
             msg: "OK",
             parametro,
@@ -39,8 +50,10 @@ const verDiagnostico = async(req= request, res = response) =>  {
         });
     }catch (error) {
         // throw error;
+        console.log(error);
+        console.log(' *********** FIN ERROR verDiagnostico ************');
         res.status( 500 ).json({
-            msg: error
+            msg: 'ocurrio un error'
         });
     }
 }

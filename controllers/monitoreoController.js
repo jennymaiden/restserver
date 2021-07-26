@@ -1,8 +1,7 @@
 const { response, request } = require('express');
-const Parametro = require('../models/parametros');
 
-const { tarea , crearTarea} = require('../microservices/cronJobs')
-const {ejecutarPing, ping,guardarParametros, crearLatencia} = require('../microservices/envioPaquetes');
+const { crearTarea, ejecutarMonitoreo} = require('../microservices/cronJobs')
+const {ping,guardarParametros, crearLatencia} = require('../microservices/envioPaquetes');
 
 
 //Servicio de monitoreo en tiempo real
@@ -12,64 +11,56 @@ async function monitoreoTiempoReal(req = request, res = response) {
     //obtener los parametros de entrada 
     const {fechaInicio,fechaFin, numClientes, tiempoSeg, tamanioPaquete, URL } = req.body;
     const body = req.body;
-    var parametro = new Parametro(body);
-    //var latencia = new Latencia();
+    parametroModel = guardarParametros(body);
+    // console.log("el id del los parametros ingrasados es"+ parametroModel._id);
+    latenciaModel = crearLatencia(parametroModel._id);
 
-    // let parametroSave = await parametro.save(function(err, doc) {
-    //     if (err) return console.error(err);
-    //     console.log("Parametro inserted succussfully!" +parametroSave);
-         
-    // });
-    await parametro.save((function (Err, doc) {
-        return function () {
-          console.log(parametro._id);
-          // your save callback code in here
-        };
-      })(parametro._id));
+    var stream = fs.createReadStream(__dirname + '/data.txt');
+    stream.pipe(res);
+    //Ejecutar comando
+    ejecutarMonitoreo(body,parametroModel._id );
 
-    console.log('los parametros guardados fueron: '+parametro._id)
 
-    // latencia.idParametros = parametro._id;
-    
-    // await latencia.save(function(err, lac){
-    //     if (err) return console.error(err);
-
-    //     console.log("Latencia inserted succussfully!"+latencia);
-
-    // });
-    //console.log("id latencia es: "+latencia._id);
-    ejecutarPing(numClientes, tamanioPaquete, URL,parametro._id)
     //ping(tamanioPaquete, URL);
-    //https://www.npmjs.com/package/net-ping
+                //https://www.npmjs.com/package/net-ping
 
-    res.json({
-        msg: "get API",
-        parametro
-    });
+    // res.json({
+    //     msg: "get API",
+    //     parametro
+    // });
+    // Documentacion
+    // https://elabismodenull.wordpress.com/2017/03/28/el-manejo-de-streams-en-nodejs/
 };
 
 
 //Servicio de monitoreo en programado
 const monitoreoProgramado = (req= request, res = response) =>  {
+    try{
+        console.log(' *********** monitoreoProgramado ************');
+        //obtener los parametros de entrada
+        const body = req.body;
+        console.log('el cuerpo es: '+body);
+        parametroModel = guardarParametros(body);
+        // console.log("el id del los parametros ingrasados es"+ parametroModel._id);
+        latenciaModel = crearLatencia(parametroModel._id);
+        // console.log("El id de la latencia es :"+latenciaModel._id);
+        //Crear tarea programada
+        boolTarea = crearTarea(body,parametroModel._id,latenciaModel._id);
 
-    //obtener los parametros de entrada 
-    const {fechaInicio,fechaFin, numClientes, tiempoSeg, tamanioPaquete, URL, horaInicio,horaFin } = req.body;
-    const body = req.body;
-    parametroModel = guardarParametros(body);
-    console.log("el id del los parametros ingrasados es"+ parametroModel._id);
-    latenciaModel = crearLatencia(parametroModel._id);
-    console.log("El id de la latencia es :"+latenciaModel._id);
-    //Crear tarea programada
-    boolTarea = crearTarea(body,parametroModel._id,latenciaModel._id);
-
-    //dias = calcularDiasAusencia(fechaInicio,fechaFin )
-    
-    res.status(200).json({
-        msg: "get API monitoreoProgramado 1",
-        parametroModel,
-        latenciaModel,
-        tarea: boolTarea
-    });
+        //dias = calcularDiasAusencia(fechaInicio,fechaFin )
+        console.log(' *********** FIN monitoreoProgramado ************');
+        res.status(200).json({
+            msg: "OK",
+            idLatencia: latenciaModel._id,
+            idParametros: parametroModel._id
+        });
+    }catch (error){
+        console.log(error);
+        console.log(' *********** FIN ERROR monitoreoProgramado ************');
+        res.status( 500 ).json({
+            msg: 'ocurrio un error'
+        });
+    }
 }
 
 module.exports = {

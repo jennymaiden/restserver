@@ -5,14 +5,27 @@ const { response, request } = require('express');
 const { obtenerUltimaLatencia } = require("../microservices/graficaService");
 const {listarMuestrasByParametro,
     ordenarMuestrasByCliente} = require('../microservices/diagnosticoService');
+const Latencia = require("../models/latencia");
+const { getLatencia } = require('../repositoryDB/latenciaRepository');
+
+
 
 const verGrafica = async(req= request, res = response) =>  {
 
     //Consultar la ultima latencia tomada
     try {
-        const latencia = await obtenerUltimaLatencia();
-        console.log('la latencia es ',latencia[0]);
-        console.log('el id parametro es ',latencia[0].idParametros);
+        //Validamos si llega el idLatencia en los parametros
+        const idLatencia = req.params.idLatencia;
+        console.log('verGrafica :: idlatencia '+idLatencia);
+
+        if (idLatencia !== void 0 && idLatencia !== 'undefined'){
+            console.log('entro aqui *****');
+            latencia = await getLatencia(idLatencia);
+        }else {
+            console.log('entro aqui +++++');
+            latencia = await obtenerUltimaLatencia();
+        }
+
         const listMuestras = await listarMuestrasByParametro(latencia[0].idParametros);
         const arreglo = ordenarMuestrasByCliente(listMuestras);
         res.status( 200 ).json({
@@ -23,7 +36,7 @@ const verGrafica = async(req= request, res = response) =>  {
     }catch (error) {
         // throw error;
         res.status( 500 ).json({
-            msg: err
+            msg: error
         });
     }
 

@@ -2,7 +2,10 @@ const cron = require('node-cron');
 const { ping } = require('./envioPaquetes');
 const { crearDiagnostico } = require('../microservices/diagnosticoService');
 const { crearAlertaConNotificacion } = require('../microservices/alertasService');
-var spawn =require('child_process').spawn, child=null;
+const Threads = require('webworker-threads');
+const { spawn } = require("child_process");
+
+var child=null, child2=null;
 
 /***Los parametros del cron jobs es
  * Seconds: 0-59
@@ -48,7 +51,7 @@ function sumarSegundosHora(hora, segundos, fechaInicio, fechaFin){
 
 }
 function crearTarea(parametroModel,idParametro, idLatencia){
-    console.log('El parametro es '+parametroModel);
+
     //El formato de las fechas es yyyy-mm-dd
     //El formato de la hora es hh:mm
     var auxVFechaIni = parametroModel.fechaInicio.split('-')
@@ -63,9 +66,9 @@ function crearTarea(parametroModel,idParametro, idLatencia){
     console.log('la fecha hora del servidor es: '+new Date());
     console.log('numero de clientes: '+parametroModel.numClientes);
     //Ejecutar la tarea x clientes
-    var tareaXCliente = {};
+    var tareaXCliente = [];
     // for (let i = 0; i < parametroModel.numClientes; i++){
-    //     console.log('index '+i);
+    //     console.log('Cliente #:: '+i);
     //     var index = i+1;
     //     tareaXCliente['tarea_' + index]  = cron.schedule(auxVHoraIni[1]+' '+auxVHoraIni[0]+' '+auxVFechaIni[2]+' '+auxVFechaIni[1]+' *', () =>  {
     //         console.log('Se creo la tarea '+index);
@@ -74,34 +77,69 @@ function crearTarea(parametroModel,idParametro, idLatencia){
     //
     // }
 
+    var numThreads= parametroModel.numClientes;
+    const threadPool= Threads.createPool(numThreads).all.eval(tareaPing);
+
+
+    // threadPool.all.eval('tareaPing ('+parametroModel.tamanioPaquete+', '+parametroModel.URL+', 1, '+idParametro+')', function cb (err, data) {
+    //     process.stdout.write(" ["+ this.id+ "]"+ data);
+    //     this.eval('tarea(parametroModel.tamanioPaquete,parametroModel.URL,this.id,idParametro)', cb);
+    // });
+    //
+    // (function spinForever () {
+    //     process.stdout.write(".");
+    //     // setImmediate(spinForever);
+    // })();
+    // console.log("------****************-----");
+    // child = ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro);
+    // console.log('que tiene ping '+child)
+    // console.log("------*******************-----");
+
+
     //Ejecutar tareas
 
     cron.schedule(auxVHoraIni[1]+' '+auxVHoraIni[0]+' '+auxVFechaIni[2]+' '+auxVFechaIni[1]+' *',()=>{
         console.log("------************Ejecutar tareas********-----");
-        child = ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro);
-
-        // for (const property in tareaXCliente) {
-        //     console.log(`${property}: ${tareaXCliente[property]}`);
-        //     console.log('kill');
-        //     child.stdin.pause();
-        //     child.kill();
-        //     tareaXCliente[property].start();
+        // child = ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro);
+        // child2 = ping(parametroModel.tamanioPaquete,parametroModel.URL,2,idParametro);
+        // for (var i =0 ; i <parametroModel.numClientes ; i++){
+        //     //Crear hilo
+        //     child = ping(parametroModel.tamanioPaquete,parametroModel.URL,i+1,idParametro);
+        //     tareaXCliente.push(child);
         // }
+
+        for (var i =0 ; i < parametroModel.numClientes ; i++) {
+            // extra closure to get proper scoping on 'i'
+            (function(i) {
+                // dispatch each request to the first available thread
+                threadPool.any.eval(tareaPing(), function(err, val ) {
+
+                    tareaXCliente.push(ping(parametroModel.tamanioPaquete,parametroModel.URL,i+1,idParametro));
+                    // destroy the pool when all results have been produced
+                    if (err) throw err; // something abnormal
+                    // print the result
+                    console.log('entra en e error ' + err);
+
+                });
+            })(i);
+        }
+
+        // threadPool.all.eval(ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro), function cb (err, data) {
+        //     process.stdout.write(" ["+ this.id+ "]"+ data);
+        //     this.eval(ping(parametroModel.tamanioPaquete,parametroModel.URL,this.id,idParametro), cb);
+        // });
     });
 
     //Tarea para detener las tareas
     cron.schedule(auxVHoraFin[1]+' '+auxVHoraFin[0]+' '+auxVFechaFin[2]+' '+auxVFechaFin[1]+' *',()=>{
         console.log("------************Detener tareas********-----");
-        console.log('kill');
-        console.log('Tarea: '+child);
-        child.stdin.pause();
-        child.kill();
-        // for (const property in tareaXCliente) {
-        //     console.log(`${property}: ${tareaXCliente[property]}`);
-        //     tareaXCliente[property].destroy();
-        // }
+        for (const property in tareaXCliente) {
+            console.log(`${property}: ${tareaXCliente[property]}`);
+            tareaXCliente[property].stdin.pause();
+            tareaXCliente[property].kill();
+        }
         //LanzarAlerta
-        crearAlertaConNotificacion();
+        crearAlertaConNotificacion(idParametro,idLatencia );
 
 
     });
@@ -109,7 +147,40 @@ function crearTarea(parametroModel,idParametro, idLatencia){
     return true;
 
 }
+
+function tareaPing () {
+
+    return 'echo';
+}
+
+function ejecutarMonitoreo(body, idParametro){
+
+    console.log('numero de clientes: '+body.numClientes);
+    var tareaXCliente = [];
+    var numThreads= body.numClientes;
+    const threadPool= Threads.createPool(numThreads).all.eval(tareaPing);
+    for (var i =0 ; i < body.numClientes ; i++) {
+        // extra closure to get proper scoping on 'i'
+        (function(i) {
+            // dispatch each request to the first available thread
+            threadPool.any.eval(tareaPing(), function(err, val ) {
+                console.log('tareaPing=' + val);
+                console.log('tareaPing= error' + err);
+                tareaXCliente.push(ping(body.tamanioPaquete,body.URL,i+1,idParametro));
+                // destroy the pool when all results have been produced
+                if (err) throw err; // something abnormal
+                // print the result
+                console.log('entra en e error ' + err);
+
+            });
+        })(i);
+    }
+
+}
+
+
 module.exports = {
     tarea,
-    crearTarea
+    crearTarea,
+    ejecutarMonitoreo
 };
