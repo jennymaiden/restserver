@@ -49,7 +49,7 @@ function ping ( tamanio, url, cliente,idParametro) {
             NODE_ENV: 'production',
             PATH: process.env.PATH
         }
-    });
+    }).on('error', function( err ){ throw err });
 
     var muestraModel = new Muestra();
     
