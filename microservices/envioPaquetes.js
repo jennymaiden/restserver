@@ -31,13 +31,6 @@ function guardarParametros(parametroBody){
     parametro.save();
     return parametro;
 }
-var oldSpawn = childProcess.spawn;
-function mySpawn() {
-    console.log('spawn called');
-    console.log(arguments);
-    var result = oldSpawn.apply(this, arguments);
-    return result;
-}
 
 function ping ( tamanio, url, cliente,idParametro) {
     var isWin = process.platform.indexOf('win') === 0; // win32 or win64
