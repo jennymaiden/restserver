@@ -33,7 +33,7 @@ function guardarParametros(parametroBody){
 }
 
 function ping ( tamanio, url, cliente,idParametro) {
-    const auxPing = spawn("ping", ["-s "+tamanio, url]);
+    const auxPing = spawn("ping", ["-l "+tamanio, url]);
     var muestraModel = new Muestra();
     
     //const muestra = new Muestra();
