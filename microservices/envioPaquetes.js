@@ -38,10 +38,7 @@ function ping ( tamanio, url, cliente,idParametro) {
     console.log("el sistema opertivo es "+arg);
     console.log("******** "+isWin);
     const auxPing = spawn("ping", [arg, tamanio , url], {
-        env: {
-            NODE_ENV: 'production',
-            PATH: process.env.PATH
-        }
+        cwd: undefined, env: process.env
     }).on('error', function( err ){ throw err });
 
     var muestraModel = new Muestra();
