@@ -3,9 +3,6 @@ const { ping } = require('./envioPaquetes');
 const { crearDiagnostico } = require('../microservices/diagnosticoService');
 const { crearAlertaConNotificacion } = require('../microservices/alertasService');
 const Threads = require('webworker-threads');
-const { spawn } = require("child_process");
-
-var child=null, child2=null;
 
 /***Los parametros del cron jobs es
  * Seconds: 0-59

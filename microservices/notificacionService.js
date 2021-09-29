@@ -45,7 +45,8 @@ async function obtenerEndpoint(){
 
     console.log('PRIMERO::::: '+JSON.stringify(pushSubscripton));
     //return JSON.stringify(pushSubscripton);
-    return pushSubscripton1;
+    // return pushSubscripton1;
+    return pushSubscripton;
 }
 
 async function enviarNotificacion(suscripcion, payload){

@@ -39,11 +39,11 @@ const monitoreoProgramado = (req= request, res = response) =>  {
         console.log(' *********** monitoreoProgramado ************');
         //obtener los parametros de entrada
         const body = req.body;
-        console.log('el cuerpo es: '+body);
+        // console.log('el cuerpo es: '+body);
         parametroModel = guardarParametros(body);
         // console.log("el id del los parametros ingrasados es"+ parametroModel._id);
         latenciaModel = crearLatencia(parametroModel._id);
-        // console.log("El id de la latencia es :"+latenciaModel._id);
+        console.log("El id de la latencia es :"+latenciaModel._id);
         //Crear tarea programada
         boolTarea = crearTarea(body,parametroModel._id,latenciaModel._id);
 
