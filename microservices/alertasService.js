@@ -57,10 +57,12 @@ async function listarAlertas() {
 
 async function actualizarAlerta(idAlerta){
 
+    console.log('*****actualizarAlerta*******');
     const filter = { _id: idAlerta };
     const update = { leido: true };
 
     let doc = await Alerta.findOneAndUpdate(filter, update);
+
 }
 module.exports = {
     crearAlertaConNotificacion,

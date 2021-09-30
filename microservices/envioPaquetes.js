@@ -35,13 +35,12 @@ function guardarParametros(parametroBody){
 function ping ( tamanio, url, cliente,idParametro) {
     var isWin = process.platform.indexOf('win') === 0; // win32 or win64
     var arg = isWin ? '-l' : '-s';
-    console.log("el sistema opertivo es "+arg);
-    console.log("******** "+isWin);
     const auxPing = spawn("ping", [arg, tamanio , url], {
         cwd: undefined, env: process.env
     }).on('error', function( err ){ throw err });
 
     var muestraModel = new Muestra();
+    var listMuestras = [];
     
     //const muestra = new Muestra();
     //Se ejecuta mientras no alla error
@@ -49,6 +48,7 @@ function ping ( tamanio, url, cliente,idParametro) {
         //console.log(`stdout: ${data}`);
         message = decoder.write(data);
         muestraModel = identificarLinea(message, cliente,idParametro);
+        listMuestras.push(muestraModel);
         // console.log('la muestra es: '+muestraModel.id);
         // muestraModel.save();
         // muestra.update()
@@ -146,7 +146,7 @@ function identificarLinea  ( lineas, cliente, idParametro){
         msgError:auxMsgError,
         idParametros:idParametro
     });
-
+    //console.log('MUESTRA : '+muestra);
     muestra.save();
 
     return muestra;

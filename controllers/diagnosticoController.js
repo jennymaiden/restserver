@@ -24,19 +24,22 @@ const verDiagnostico = async(req= request, res = response) =>  {
     try{
         const idLatencia = req.params.idLatencia;
         console.log('verDiagnostico :: idlatencia '+idLatencia);
+        var responseLatencia = '';
         if (idLatencia !== void 0 && idLatencia !== 'undefined'){
             console.log('entro aqui +');
             latencia = await getLatencia(idLatencia);
+            responseLatencia = latencia?latencia._id:'' ;
         }else {
             console.log('entro aqui --');
             latencia = await obtenerUltimaLatencia();
+            responseLatencia = latencia[0]._id;
         }
-        // console.log('objeto latencia :  '+latencia[0]._id);
-        parametro = await obtenerParametros(latencia[0]._id);
-        diagnostico = await obtenerDiagnostico(latencia[0]._id);
+        console.log('objeto latencia :  '+responseLatencia);
+        parametro = await obtenerParametros(responseLatencia);
+        diagnostico = await obtenerDiagnostico(responseLatencia);
 
         if (diagnostico === null){
-            diagnostico = await crearDiagnostico(latencia[0]._id);
+            diagnostico = await crearDiagnostico(responseLatencia);
         }
         // Buscar las recomendaciones
         recomendacion = await obtenerRecomendacion(diagnostico.idRecomendacion);

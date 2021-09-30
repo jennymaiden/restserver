@@ -97,13 +97,20 @@ function crearTarea(parametroModel,idParametro, idLatencia){
 
     cron.schedule(auxVHoraIni[1]+' '+auxVHoraIni[0]+' '+auxVFechaIni[2]+' '+auxVFechaIni[1]+' *',()=>{
         console.log("------************Ejecutar tareas********-----");
-        // child = ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro);
-        // child2 = ping(parametroModel.tamanioPaquete,parametroModel.URL,2,idParametro);
-        // for (var i =0 ; i <parametroModel.numClientes ; i++){
-        //     //Crear hilo
-        //     child = ping(parametroModel.tamanioPaquete,parametroModel.URL,i+1,idParametro);
-        //     tareaXCliente.push(child);
-        // }
+        //  child = ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro);
+        //  child2 = ping(parametroModel.tamanioPaquete,parametroModel.URL,2,idParametro);
+        // child3 = ping(parametroModel.tamanioPaquete,parametroModel.URL,3,idParametro);
+        // tareaXCliente.push(child);
+        // tareaXCliente.push(child2);
+        // tareaXCliente.push(child3);
+        //  for (var i =0 ; i <parametroModel.numClientes ; i++){
+        //      //Crear hilo
+        //      child = ping(parametroModel.tamanioPaquete,parametroModel.URL,i+1,idParametro);
+        //      tareaXCliente.push(child);
+        //
+        //
+        //      console.log("el cliente " + i+1);
+        //  }
 
         for (var i =0 ; i < parametroModel.numClientes ; i++) {
             // extra closure to get proper scoping on 'i'
@@ -121,10 +128,10 @@ function crearTarea(parametroModel,idParametro, idLatencia){
             })(i);
         }
 
-        // threadPool.all.eval(ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro), function cb (err, data) {
-        //     process.stdout.write(" ["+ this.id+ "]"+ data);
-        //     this.eval(ping(parametroModel.tamanioPaquete,parametroModel.URL,this.id,idParametro), cb);
-        // });
+         /*threadPool.all.eval(ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro), function cb (err, data) {
+             process.stdout.write(" ["+ this.id+ "]"+ data);
+             this.eval(ping(parametroModel.tamanioPaquete,parametroModel.URL,this.id,idParametro), cb);
+         });*/
     });
 
     //Tarea para detener las tareas
