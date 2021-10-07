@@ -30,7 +30,7 @@ const obtenerMuestra = async (idMuestra)=>{
  * Filtrar en la colección de muestras por el idParametro para
  * traer todas las muestras relacionadas **/
 async function  listMuestrasByParametro (idParametro){
-
+    console.log('el id parametro es ',idParametro);
     const muestrasList = await Muestra.find({ idParametros: idParametro},
         function (err, data) {
             if (err){

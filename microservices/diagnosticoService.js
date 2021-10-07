@@ -75,10 +75,12 @@ async function  obtenerDiagnostico(idLatencia) {
 async function relacionarRecomendacion(paquetesPerdidos, arrayMensajesError, muestrasList) {
 
     var tipoFalla = 'ninguna';
-    var porcentajeFalla = muestrasList.length * 0.5;
-    if (paquetesPerdidos > porcentajeFalla) {
+    // var porcentajeFalla = muestrasList.length * 0.5;
+    if (paquetesPerdidos > 5) {
         tipoFalla = 'muchosPerdidos';
-    }else{
+    }else if(muestrasList.length == 0){
+        tipoFalla = 'timeout';
+    } else{
         //Recorremos el array para validar si tiene algun mensaje de error
         var msgPriorisar = '';
         arrayMensajesError.forEach(function (msg, index) {
@@ -97,8 +99,6 @@ async function relacionarRecomendacion(paquetesPerdidos, arrayMensajesError, mue
             }else if (msgPriorisar.includes('NAT')){
                 tipoFalla = 'NAT';
             }
-        }else {
-            tipoFalla = 'timeout';
         }
     }
     console.log('tipoFalla::: '+tipoFalla);
@@ -124,12 +124,12 @@ function obtenerEstadistica(muestrasList){
     var msgEstadistica = "";
     var promerio =0;
     var arrayMSGPerdidos = [];
+    var arrayTiempos = [];
 
     muestrasList.forEach(function (Muestra,index){
         // console.log(`${index} : ${Muestra}`);
-        if(Muestra.tiempoRespuesta < min){
-            // console.log('Anterior minimo: ' + min + ', nuevo minimo: ' + Muestra.tiempoRespuesta);
-            min = Muestra.tiempoRespuesta;
+        if (Muestra.tiempoRespuesta != 0 ){
+            arrayTiempos.push(Muestra.tiempoRespuesta);
         }
         if(Muestra.tiempoRespuesta > max){
             // console.log('Anterior maximo: ' + max + ', nuevo maximo: ' + Muestra.tiempoRespuesta);
@@ -142,7 +142,8 @@ function obtenerEstadistica(muestrasList){
         }
 
     });
-    // console.log('Valor mínimo: ' + min);
+    min = Math.min.apply(Math, arrayTiempos);
+    console.log('Valor mínimo: ' + min);
     // console.log('Valor maximo: ' + max);
     // console.log('Valor sumatoria: ' + sumatoria);
     promerio = sumatoria/muestrasList.length;
@@ -168,9 +169,9 @@ async function crearDiagnostico(idLatencia) {
     // console.log(`muestraa de lista ${muestrasList}`);
     const arrayEstadistica = obtenerEstadistica(muestrasList);
     // console.log('La estadistica dio : '+arrayEstadistica);
-    var porcentajeFalla = muestrasList.length * 0.2;
+    var porcentajeFalla = muestrasList.length * 0.02;
     var falloDiagnostico = false;
-    if (arrayEstadistica[1] > porcentajeFalla) {
+    if (arrayEstadistica[1] > porcentajeFalla || muestrasList.length== 0 ) {
         falloDiagnostico = true;
     }
 

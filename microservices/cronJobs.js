@@ -1,6 +1,5 @@
 const cron = require('node-cron');
 const { ping } = require('./envioPaquetes');
-const { crearDiagnostico } = require('../microservices/diagnosticoService');
 const { crearAlertaConNotificacion } = require('../microservices/alertasService');
 const Threads = require('webworker-threads');
 
@@ -12,41 +11,7 @@ Day of Month: 1-31
 Months: 0-11 (Jan-Dec)
 Day of Week: 0-6 (Sun-Sat)
  */
-function tarea (minutos, hora,dia, mes,numCliente, idParametro){
 
-    console.log('La expresion para la tarea es '+'* '+minutos+' '+hora+' '+dia+' '+mes+' *');
-    var fecha= new Date();
-    console.log('la fecha hora del servidor es: '+fecha);
-
-    cron.schedule(minutos+' '+hora+' '+dia+' '+mes+' *',()=>{
-        console.log("------********************-----");
-
-        ping(76,'google.com',numCliente,idParametro);
-    });
-
-}
-
-function sumarSegundosHora(hora, segundos, fechaInicio, fechaFin){
-    auxVHoraIni = hora.split(':');//Formato HH:mm
-    segundosHora = (auxVHoraIni[1] * 60)+segundos;
-    if(segundosHora<60){
-
-    }
-    if(segundosHora>59){
-        //se suman minutos
-    }
-
-    if (s>59){m++;s=0;}
-    if (m>59){h++;m=0;}
-    if (h>24){h=0;}
-
-    if (s<10){sAux="0"+s;}else{sAux=s;}
-    if (m<10){mAux="0"+m;}else{mAux=m;}
-    if (h<10){hAux="0"+h;}else{hAux=h;}
-
-    document.getElementById("hms").innerHTML = hAux + ":" + mAux + ":" + sAux;
-
-}
 function crearTarea(parametroModel,idParametro, idLatencia){
 
     //El formato de las fechas es yyyy-mm-dd
@@ -94,7 +59,6 @@ function crearTarea(parametroModel,idParametro, idLatencia){
 
 
     //Ejecutar tareas
-
     cron.schedule(auxVHoraIni[1]+' '+auxVHoraIni[0]+' '+auxVFechaIni[2]+' '+auxVFechaIni[1]+' *',()=>{
         console.log("------************Ejecutar tareas********-----");
         //  child = ping(parametroModel.tamanioPaquete,parametroModel.URL,1,idParametro);
@@ -184,7 +148,6 @@ function ejecutarMonitoreo(body, idParametro){
 
 
 module.exports = {
-    tarea,
     crearTarea,
     ejecutarMonitoreo
 };

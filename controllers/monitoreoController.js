@@ -2,21 +2,19 @@ const { response, request } = require('express');
 
 const { crearTarea, ejecutarMonitoreo} = require('../microservices/cronJobs')
 const {ping,guardarParametros, crearLatencia} = require('../microservices/envioPaquetes');
-
+const {socket, io }= require('../microservices/socket');
 
 //Servicio de monitoreo en tiempo real
 async function monitoreoTiempoReal(req = request, res = response) {
 //https://www.digitalocean.com/community/tutorials/how-to-launch-child-processes-in-node-js-es
 //Pagina para validar el comando fork para comunicacion bilateral
     //obtener los parametros de entrada 
-    const {fechaInicio,fechaFin, numClientes, tiempoSeg, tamanioPaquete, URL } = req.body;
+    // const {fechaInicio,fechaFin, numClientes, tiempoSeg, tamanioPaquete, URL } = req.body;
     const body = req.body;
     parametroModel = guardarParametros(body);
     // console.log("el id del los parametros ingrasados es"+ parametroModel._id);
     latenciaModel = crearLatencia(parametroModel._id);
 
-    var stream = fs.createReadStream(__dirname + '/data.txt');
-    stream.pipe(res);
     //Ejecutar comando
     ejecutarMonitoreo(body,parametroModel._id );
 
@@ -30,7 +28,15 @@ async function monitoreoTiempoReal(req = request, res = response) {
     // });
     // Documentacion
     // https://elabismodenull.wordpress.com/2017/03/28/el-manejo-de-streams-en-nodejs/
+    // ########## SOCKET IO##########
+
 };
+const conectarSocket = async (req= request, res = response) =>  {
+    console.log("Entro socket");
+
+    socket.socketConnection.socket.emit('evento',1);
+
+}
 
 
 //Servicio de monitoreo en programado
@@ -65,5 +71,6 @@ const monitoreoProgramado = (req= request, res = response) =>  {
 
 module.exports = {
     monitoreoTiempoReal,
-    monitoreoProgramado
+    monitoreoProgramado,
+    conectarSocket
 }

@@ -1,5 +1,5 @@
 const { Router, response } = require('express');
-const { monitoreoTiempoReal, monitoreoProgramado}= require('../controllers/monitoreoController')
+const { monitoreoTiempoReal, monitoreoProgramado, conectarSocket }= require('../controllers/monitoreoController')
 const {obtenerSuscripción, notificacionPush } = require('../controllers/notificacionController')
 const {verAlertas, verActualizarAlerta } = require('../controllers/alertasController')
 const {verDiagnostico } = require('../controllers/diagnosticoController')
@@ -25,6 +25,7 @@ router.get('/alertas/:idAlerta', verActualizarAlerta);
 
 //Servicio de monitoreo en tiempo real
 router.post('/tiemporeal', monitoreoTiempoReal);
+router.get('/tiemporeal', conectarSocket);
 
 //Servicio de monitoreo programado
 router.post('/programado', monitoreoProgramado);

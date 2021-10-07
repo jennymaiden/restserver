@@ -21,6 +21,7 @@
     "moment": "^2.29.1",
     "mongoose": "^5.11.17",
     "node-cron": "^2.0.3",
+    "socket.io": "^2.3.0",
     "web-push": "^3.4.4",
     "webworker-threads": "^0.7.17"
   },

@@ -26,11 +26,11 @@ const verDiagnostico = async(req= request, res = response) =>  {
         console.log('verDiagnostico :: idlatencia '+idLatencia);
         var responseLatencia = '';
         if (idLatencia !== void 0 && idLatencia !== 'undefined'){
-            console.log('entro aqui +');
+            // console.log('entro aqui +');
             latencia = await getLatencia(idLatencia);
             responseLatencia = latencia?latencia._id:'' ;
         }else {
-            console.log('entro aqui --');
+            // console.log('entro aqui --');
             latencia = await obtenerUltimaLatencia();
             responseLatencia = latencia[0]._id;
         }
