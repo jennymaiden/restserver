@@ -2,9 +2,8 @@
 const {Schema, model}  = require('mongoose');
 
 const suscripcionSchema = new Schema({
-    _id: ObjectId,
-    llavePublica : String, //La llave publica que necesito para la suscripción
-    llavePrivata : String,
+    auth : String, //La llave publica que necesito para la suscripción
+    p256dh : String,
     endpoint : String
 });
 

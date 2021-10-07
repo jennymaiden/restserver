@@ -15,30 +15,50 @@ const { spawn } = require("child_process");
 const { StringDecoder } = require('string_decoder');
 
 const  Muestra  = require("../models/muestra");
-const Latencia = require("../models/latencia");
+const Parametro = require('../models/parametros');
+const  Latencia = require('../models/latencia');
 const decoder = new StringDecoder('utf8');
 
-function ejecutarPing(cliente, tamanio, url, idParametro){
+function crearLatencia(idParametro){
 
-    console.log("ejecucion cliente :" +cliente);
-    ping(tamanio,url, cliente, idParametro);
-    //ping.close();
+    const latenciaModel = new Latencia();
+    latenciaModel.idParametros = idParametro;
+    latenciaModel.save();
+    return latenciaModel;
+}
+function guardarParametros(parametroBody){
+    const parametro = new Parametro(parametroBody);
+    parametro.save();
+    return parametro;
 }
 
-const ping = ( tamanio, url, cliente,idParametro) =>{
-    const auxPing = spawn("ping", ["-s "+tamanio, url]);
+function ping ( tamanio, url, cliente,idParametro) {
+    var isWin = process.platform.indexOf('win') === 0; // win32 or win64
+    var arg = isWin ? '-l' : '-s';
+    const auxPing = spawn("ping", [arg, tamanio , url], {
+        cwd: undefined, env: process.env
+    }).on('error', function( err ){ throw err });
+
+    var muestraModel = new Muestra();
+    var listMuestras = [];
     
     //const muestra = new Muestra();
     //Se ejecuta mientras no alla error
     auxPing.stdout.on("data", data =>{
         //console.log(`stdout: ${data}`);
         message = decoder.write(data);
-        muestra = identificarLinea(message, cliente,idParametro);
-        console.log('la muestra es: '+muestra.id);
+        muestraModel = identificarLinea(message, cliente,idParametro);
+        listMuestras.push(muestraModel);
+        // console.log('la muestra es: '+muestraModel.id);
+        // muestraModel.save();
+        // muestra.update()
+        
     });
 
     auxPing.stderr.on("data", data => {
         console.log(`stderr *****Si ocurre algun error *: ${data}`);
+        muestraModel.msgError = data;
+        muestraModel.save();
         //Aqui sale algun error que se presente durante el flujo de los datos
     });
 
@@ -51,6 +71,7 @@ const ping = ( tamanio, url, cliente,idParametro) =>{
         console.log(`child process exited with code ${code}`);
     });
 
+    return auxPing;
 }
 
 /*
@@ -69,9 +90,10 @@ function identificarLinea  ( lineas, cliente, idParametro){
     
 
     valor = lineas.split(/\n/);
-    console.log("tamanio : "+valor.length)
+    console.log("cliente : "+cliente)
     if(lineas.includes('timeout')){
         auxError = lineas.split(' ');
+        console.log("auxError: "+auxError);
         let icmp_seq =0;
         auxError.forEach(function(element, index, array) {
             if(element == 'icmp_seq'){
@@ -84,7 +106,12 @@ function identificarLinea  ( lineas, cliente, idParametro){
           auxTiempoRespuesta = 0;
           auxTtl= 0;
           auxTamanio = 0;
-          auxMsgError = "timeout";
+          console.log("MENSAJE: "+lineas);
+          if (lineas.includes('timeout')){
+              auxMsgError = 'timeout';
+          }else{
+              auxMsgError = lineas;
+          }
 
     }else if(!valor[0].includes('PING') && valor[0].includes('icmp_seq') && valor[0].includes('bytes')){
         cadena = valor[0].split(" ");
@@ -100,12 +127,15 @@ function identificarLinea  ( lineas, cliente, idParametro){
                 auxTtl= ttl[1];
             }else if(element.includes('time')){
                 time = element.split('=');
+                console.log('Tiempo : '+time[1]);
                 auxTiempoRespuesta = time[1];
             }
             
             
         }, this);
 
+    }else {
+        // TODO: Guardar algun fallo
     }
     
     var muestra = new Muestra ({ NumeroPaquete:auxNumeroPaquete,
@@ -116,11 +146,15 @@ function identificarLinea  ( lineas, cliente, idParametro){
         msgError:auxMsgError,
         idParametros:idParametro
     });
-    
+    //console.log('MUESTRA : '+muestra);
     muestra.save();
-    
+
     return muestra;
 }
 
 //Exportar
-module.exports= {ejecutarPing, ping}
+module.exports= {
+    ping,
+    guardarParametros,
+    crearLatencia
+}
